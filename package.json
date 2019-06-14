@@ -1,0 +1,21 @@
+{
+  "name": "kube-ldap-client-go-exec-plugin",
+  "version": "0.0.1",
+  "description": "client-go-exec plugin for kube-ldap",
+  "main": "src/index.js",
+  "author": "Fabian.jucker <jucker@gyselroth.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "btoa": "^1.2.1",
+    "commander": "^2.20.0",
+    "eslint": "^5.16.0",
+    "eslint-config-google": "^0.13.0",
+    "jsonwebtoken": "^8.2.0",
+    "nexe": "^3.3.0",
+    "node-fetch": "^2.1.2"
+  },
+  "scripts": {
+    "build": "yarn run nexe -o build/kube-ldap-client-go-exec-plugin",
+    "lint": "yarn run eslint src/"
+  }
+}
