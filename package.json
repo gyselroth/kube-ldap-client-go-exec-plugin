@@ -16,6 +16,9 @@
   },
   "scripts": {
     "build": "yarn run nexe -o build/kube-ldap-client-go-exec-plugin",
+    "build:linux": "yarn run nexe -o build/kube-ldap-client-go-exec-plugin-linux",
+    "build:osx": "yarn run nexe -o build/kube-ldap-client-go-exec-plugin-osx",
+    "build:windows": "yarn run nexe -o build/kube-ldap-client-go-exec-plugin-windows",
     "lint": "yarn run eslint src/"
   }
 }
