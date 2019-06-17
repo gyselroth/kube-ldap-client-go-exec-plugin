@@ -12,8 +12,9 @@ environment:
 deploy:
   release: kube-ldap-client-go-exec-plugin $(APPVEYOR_REPO_TAG_NAME)
   provider: GitHub
+  description: kube-ldap-client-go-exec-plugin
   auth_token:
-    secure: Y8dy1fWLXMijKfxj45j0q0eeYqnfN/nGs2UBgVx3hAlkJ/xHXnk0ZIjQMbalzEc
+    secure: zjBwwHTWfbLmoju6SREJTkDxCPxJ501plBxrh9xD6mTGUAEBVAZQV2X3EfRpc6Tt
   artifact: build/.*
   draft: false
   prerelease: false
