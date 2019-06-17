@@ -15,7 +15,7 @@ deploy:
   description: kube-ldap-client-go-exec-plugin
   auth_token:
     secure: zjBwwHTWfbLmoju6SREJTkDxCPxJ501plBxrh9xD6mTGUAEBVAZQV2X3EfRpc6Tt
-  artifact: build/.*
+  artifact: build\kube-ldap-client-go-exec-plugin-windows.exe
   draft: false
   prerelease: false
   on:
