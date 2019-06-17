@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const {URL} = require('url');
 const jsonwebtoken = require('jsonwebtoken');
 const readline = require('readline');
 const Writable = require('stream').Writable;
