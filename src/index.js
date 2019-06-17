@@ -103,6 +103,7 @@ const printUsageAndExit = () => {
 };
 
 const main = () => {
+  const debug = process.env.DEBUG === 'true';
   let kubeLdapUrl = null;
   const program = require('commander');
   program.arguments('<url>').action((url) => {
@@ -117,7 +118,10 @@ const main = () => {
   try {
     new URL(kubeLdapUrl);
   } catch (error) {
-    process.stderr.write('Error: invalid url ' + kubeLdapUrl + '\n');
+    process.stderr.write(`Error: invalid url ${kubeLdapUrl}\n`);
+    if (debug) {
+      process.stderr.write(error.stack + '\n');
+    }
     printUsageAndExit();
   }
 
