@@ -1,10 +1,14 @@
 build:
   verbosity: minimal
+install:
+  - yarn install
+test_script:
+  - yarn run lint
 build_script:
-  yarn install
-  yarn run lint
-  yarn run build:windows
-image: 8.15.1
+  - yarn run build:windows
+version: '{build}'
+environment:
+  nodejs_version: "8"
 deploy:
   release: kube-ldap-client-go-exec-plugin $(APPVEYOR_REPO_TAG_NAME)
   provider: GitHub
