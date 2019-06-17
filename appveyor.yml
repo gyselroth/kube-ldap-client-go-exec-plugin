@@ -11,7 +11,7 @@ environment:
   nodejs_version: "8"
 artifacts:
   - path: build\kube-ldap-client-go-exec-plugin-windows.exe
-  - type: File
+    type: File
 deploy:
   tag: $(APPVEYOR_REPO_TAG_NAME)
   release: kube-ldap-client-go-exec-plugin $(APPVEYOR_REPO_TAG_NAME)
