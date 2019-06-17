@@ -10,7 +10,7 @@ Whenever kubectl is invoked with a context configured to use this plugin, the pl
 On subsequent invocations of kubectl the cached token is used unless the token is expired or rejected by the kubernetes apiserver (in which case it asks for username and password again).
 
 ## Installation
-Download the latest version of this plugin from the [releases page](https://github.com/gyselroth/kube-ldap-client-go-exec-plugin/releases) for your architecture and place it in an executable path for your OS.
+Download the latest version of this plugin from the [releases page](https://github.com/gyselroth/kube-ldap-client-go-exec-plugin/releases) for your OS, rename it to `kube-ldap-client-go-exec-plugin` and place it in an executable path for your OS.
 E.g.:
 - Linux/OS X: `/usr/local/bin`
 - Windows: `c:\windows\system32`
