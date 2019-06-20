@@ -1,47 +1,37 @@
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
 const {URL} = require('url');
-const jsonwebtoken = require('jsonwebtoken');
 const readline = require('readline');
 const Writable = require('stream').Writable;
-const fetch = require('node-fetch');
-const btoa = require('btoa');
+const program = require('commander');
+const authenticator = require('./authenticator');
+const parser = require('./parser');
+const cache = require('./cache');
 
-const parseAuthenticatedResponse = (token, expirationTimestamp) => {
-  const authenticatedTemplate = {
-    apiVersion: 'client.authentication.k8s.io/v1alpha1',
-    kind: 'ExecCredential',
-    status: {
-      token: null,
-      expirationTimestamp: null,
-    },
-  };
-  if (!expirationTimestamp) {
-    delete authenticatedTemplate.status.expirationTimestamp;
-  } else {
-    authenticatedTemplate.status.expirationTimestamp = expirationTimestamp;
+const main = (kubeLdapUrl) => {
+  const debug = process.env.DEBUG === 'true';
+
+  try {
+    checkUrl(kubeLdapUrl, debug);
+  } catch (error) {
+    process.stderr.write(`Error: ${error.message}\n`);
+    printUsageAndExit();
   }
-  authenticatedTemplate.status.token = token;
-  return authenticatedTemplate;
+
+  const execInfo = parser.parseExecInfo(process.env.KUBERNETES_EXEC_INFO);
+
+  if (!cache.hasResponse() || (execInfo.spec.hasOwnProperty('response') && execInfo.spec.response.code === 401)) {
+    authenticateInteractively(kubeLdapUrl);
+  } else {
+    const response = cache.getResponse();
+    if (response && new Date((JSON.parse(response)).status.expirationTimestamp) > new Date()) {
+      process.stdout.write(response);
+      process.exit();
+    } else {
+      authenticateInteractively(kubeLdapUrl);
+    }
+  }
 };
 
-const parseUnauthenticatedResponse = (code) => {
-  const unauthenticatedTemplate = {
-    apiVersion: 'client.authentication.k8s.io/v1alpha1',
-    kind: 'ExecCredential',
-    spec: {
-      response: {
-        code: null,
-      },
-    },
-    interactive: true,
-  };
-  unauthenticatedTemplate.spec.response.code = code;
-  return unauthenticatedTemplate;
-};
-
-const authenticateInteractively = (url, cachePath) => {
+const authenticateInteractively = (url) => {
   const mutableStderr = new Writable({
     write: function(chunk, encoding, callback) {
       if (!this.muted) {
@@ -62,36 +52,22 @@ const authenticateInteractively = (url, cachePath) => {
   input.question('Username: ', function(username) {
     input.question('Password:', function(password) {
       process.stderr.write('\n');
-      const headers = new fetch.Headers();
-      headers.append('Authorization', 'Basic ' + btoa(username + ':' + password));
 
-      fetch(url + '/auth', {
-        method: 'GET',
-        headers: headers,
-      }).then((response) => {
-        if (response.status !== 200) {
-          process.stderr.write('Error: ' + response.statusText + '\n');
-          process.stdout.write(JSON.stringify(parseUnauthenticatedResponse(response.status)));
-        } else {
-          response.text().then((token) => {
-            const decodedToken = jsonwebtoken.decode(token);
-            const expirationTimestamp = new Date(decodedToken.exp * 1000).toISOString();
-            const response = JSON.stringify(parseAuthenticatedResponse(token, expirationTimestamp));
-            fs.writeFile(cachePath, response, (error) => {
-              if (error) {
-                console.log('error while caching token: ' + error.message);
-              }
-            });
-            process.stdout.write(response);
-          }, (error) => {
-            process.stderr.write('Error: ' + error.message + '\n');
-            process.stdout.write(JSON.stringify(parseUnauthenticatedResponse(400)));
-          });
-        }
-      }, (error) => {
-        process.stderr.write('Error: ' + error.message + '\n');
-        process.stdout.write(JSON.stringify(parseUnauthenticatedResponse(400)));
+      authenticator.authenticate(url, username, password).then(() => {
+        const response = JSON.stringify(
+            parser.parseAuthenticatedResponse(token, expirationTimestamp)
+        );
+        cache.cacheResponse(response, (error) => {
+          process.stderr.write('Error: ' + error.message + '\n');
+        });
+        process.stdout.write(response);
+      }).catch((authenticationError) => {
+        process.stderr.write('Error: ' + authenticationError.message + '\n');
+        process.stdout.write(JSON.stringify(
+            parser.parseUnauthenticatedResponse(authenticationError.code))
+        );
       });
+
       input.close();
     });
     mutableStderr.muted = true;
@@ -103,51 +79,25 @@ const printUsageAndExit = () => {
   process.exit(1);
 };
 
-const main = () => {
-  const debug = process.env.DEBUG === 'true';
-  let kubeLdapUrl = null;
-  const program = require('commander');
-  program.arguments('<url>').action((url) => {
-    kubeLdapUrl = url;
-  });
-  program.parse(process.argv);
-
-  if (!kubeLdapUrl) {
-    printUsageAndExit();
+const checkUrl = (url, debug) => {
+  if (!url) {
+    throw new Error('no url given');
   }
-
   try {
     new URL(kubeLdapUrl);
   } catch (error) {
-    process.stderr.write(`Error: invalid url ${kubeLdapUrl}\n`);
     if (debug) {
       process.stderr.write(error.stack + '\n');
     }
-    printUsageAndExit();
-  }
-
-  const execInfo = process.env.KUBERNETES_EXEC_INFO ?
-    JSON.parse(process.env.KUBERNETES_EXEC_INFO) : {
-      spec: {
-        response: {
-          code: 401,
-        },
-      },
-    };
-  const cachePath = path.join(os.homedir(), '.kube', 'cache', 'kube-ldap-token.yaml');
-  if (!fs.existsSync(cachePath) || (execInfo.spec.hasOwnProperty('response') && execInfo.spec.response.code === 401)) {
-    authenticateInteractively(kubeLdapUrl, cachePath);
-  } else {
-    const response = fs.readFileSync(cachePath, {
-      'encoding': 'utf8',
-    });
-    if (new Date((JSON.parse(response)).status.expirationTimestamp) > new Date()) {
-      process.stdout.write(response);
-      process.exit();
-    } else {
-      authenticateInteractively(kubeLdapUrl, cachePath);
-    }
+    throw new Error(`invalid url ${url}`);
   }
 };
 
-main();
+const readUrlFromArgs = (callback) => {
+  program.arguments('<url>').action((url) => {
+    callback(url);
+  });
+  program.parse(process.argv);
+};
+
+readUrlFromArgs(main);
