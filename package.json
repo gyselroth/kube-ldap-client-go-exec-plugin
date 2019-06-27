@@ -11,6 +11,7 @@
     "eslint": "^5.16.0",
     "eslint-config-google": "^0.13.0",
     "jest": "^24.8.0",
+    "jest-fetch-mock": "^2.1.2",
     "jsonwebtoken": "^8.2.0",
     "nexe": "^3.3.0",
     "node-fetch": "^2.1.2"

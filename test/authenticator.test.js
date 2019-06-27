@@ -1,11 +1,8 @@
 const btoa = require('btoa');
+const jsonwebtoken = require('jsonwebtoken');
+const fetch = require('jest-fetch-mock');
+jest.setMock('node-fetch', fetch);
 const authenticator = require('../src/authenticator');
-
-jest.mock('node-fetch', () => {
-  const mock = jest.genMockFromModule('node-fetch');
-  console.log(mock);
-  return mock;
-});
 
 const fixtures = {
   error: {
@@ -13,7 +10,12 @@ const fixtures = {
     code: 401,
   },
   authenticatedResponse: {
-
+    data: {
+      exp: Math.round(new Date() / 1000) + 3600,
+    },
+    jwt: () => {
+      return jsonwebtoken.sign(fixtures.authenticatedResponse.data, 'secret');
+    },
   },
   username: 'john.doe',
   password: 'secret',
@@ -23,7 +25,10 @@ const fixtures = {
   },
   method: 'GET',
   authHeader: () => {
-    return 'Authorization: ' + btoa(fixtures.username + ':' + fixtures.password);
+    return {
+      Authorization: 'Basic ' +
+        btoa(fixtures.username + ':' + fixtures.password),
+    };
   },
 };
 
@@ -38,21 +43,57 @@ describe('AuthenticationError', () => {
   });
 });
 
-describe('AuthenticationError', () => {
+describe('authenticate', () => {
+  const authenticate = (url, username, password, assertionCallback) => {
+    return authenticator.authenticate(url, username, password)
+        .then(({token, expirationTimestamp}) => {
+          assertionCallback(token, expirationTimestamp);
+        }).catch((error) => {
+          throw error;
+        });
+  };
+
   test('Returns token and expiration timestamp if authenication succeeds', () => {
+    fetch.mockResponseOnce(fixtures.authenticatedResponse.jwt(), {status: 200});
+
     expect.hasAssertions();
-    authenticator.authenticate(
+    return authenticate(
         fixtures.url,
         fixtures.username,
-        fixtures.password
-    ).then(() => {
-      expect(fetch).toHaveBeenCalledWith(
-          fixtures.fullUrl,
-          {
-            method: fixtures.method,
-          }
-      );
-    }).catch(() => {
-    });
+        fixtures.password,
+        (token, expirationTimestamp) => {
+          expect(fetch).toHaveBeenCalledWith(
+              fixtures.fullUrl(),
+              {
+                headers: fixtures.authHeader(),
+                method: fixtures.method,
+              }
+          );
+          expect(token).toEqual(fixtures.authenticatedResponse.jwt());
+          expect(expirationTimestamp).toEqual(
+              new Date(fixtures.authenticatedResponse.data.exp * 1000).toISOString()
+          );
+        }
+    );
+  });
+
+  test('Returns AuthenticationError if authenication fails', () => {
+    fetch.mockResponseOnce({}, {status: 401});
+
+    expect.hasAssertions();
+    return expect(authenticate(
+        fixtures.url,
+        fixtures.username,
+        fixtures.password,
+        () => {
+          expect(fetch).toHaveBeenCalledWith(
+              fixtures.fullUrl(),
+              {
+                headers: fixtures.authHeader(),
+                method: fixtures.method,
+              }
+          );
+        }
+    )).rejects.toEqual(new authenticator.AuthenticationError(401, 'Unauthorized'));
   });
 });

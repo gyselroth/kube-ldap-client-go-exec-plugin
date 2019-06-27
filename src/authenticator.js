@@ -19,26 +19,23 @@ class AuthenticationError extends Error {
 
 const authenticate = (url, username, password) => {
   return new Promise((resolve, reject) => {
-    const headers = new fetch.Headers();
-    headers.append('Authorization', 'Basic ' + btoa(username + ':' + password));
-
     fetch(url + '/auth', {
       method: 'GET',
-      headers: headers,
+      headers: {Authorization: 'Basic ' + btoa(username + ':' + password)},
     }).then((response) => {
       if (response.status !== 200) {
-        reject(new AuthenticationError(response.statusText, response.status));
+        reject(new AuthenticationError(response.status, response.statusText));
       } else {
         response.text().then((token) => {
           const decodedToken = jsonwebtoken.decode(token);
           const expirationTimestamp = new Date(decodedToken.exp * 1000).toISOString();
-          resolve(token, expirationTimestamp);
+          resolve({token, expirationTimestamp});
         }, (error) => {
-          reject(new AuthenticationError(error.message, 400));
+          reject(new AuthenticationError(400, error.message));
         });
       }
     }, (error) => {
-      reject(new AuthenticationError(error.message, 400));
+      reject(new AuthenticationError(400, error.message));
     });
   });
 };
