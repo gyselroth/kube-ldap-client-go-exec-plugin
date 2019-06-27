@@ -53,7 +53,7 @@ const authenticateInteractively = (url) => {
     input.question('Password:', function(password) {
       process.stderr.write('\n');
 
-      authenticator.authenticate(url, username, password).then(() => {
+      authenticator.authenticate(url, username, password).then(({token, expirationTimestamp}) => {
         const response = JSON.stringify(
             parser.parseAuthenticatedResponse(token, expirationTimestamp)
         );
@@ -84,7 +84,7 @@ const checkUrl = (url, debug) => {
     throw new Error('no url given');
   }
   try {
-    new URL(kubeLdapUrl);
+    new URL(url);
   } catch (error) {
     if (debug) {
       process.stderr.write(error.stack + '\n');
