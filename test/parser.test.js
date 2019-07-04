@@ -74,3 +74,29 @@ describe('parseUnauthenticatedResponse', () => {
     }).toThrowError(new Error(fixtures.noCodeErrorMessage));
   });
 });
+
+describe('parseExecInfo', () => {
+  const fixtures = {
+    defaultExecInfo: {
+      spec: {
+        response: {
+          code: 401,
+        },
+      },
+    },
+    setExecInfo: {
+      spec: {
+        response: {
+          code: 200,
+        },
+      },
+    },
+  };
+  test('returns defaut execInfo if env is empty', () => {
+    expect(parser.parseExecInfo()).toEqual(fixtures.defaultExecInfo);
+  });
+
+  test('returns value from env if set', () => {
+    expect(parser.parseExecInfo(JSON.stringify(fixtures.setExecInfo))).toEqual(fixtures.setExecInfo);
+  });
+});

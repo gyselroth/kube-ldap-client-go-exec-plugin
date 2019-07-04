@@ -13,6 +13,7 @@
     "jest": "^24.8.0",
     "jest-fetch-mock": "^2.1.2",
     "jsonwebtoken": "^8.2.0",
+    "mock-stdin": "^0.3.1",
     "nexe": "^3.3.0",
     "node-fetch": "^2.1.2"
   },

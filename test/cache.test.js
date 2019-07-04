@@ -73,10 +73,8 @@ describe('getResponse', () => {
 describe('cacheResponse', () => {
   // Mock fs
   let throwsError = false;
-  fs.writeFile = jest.fn((path, data, errorCallback) => {
-    if (throwsError) {
-      errorCallback(new Error());
-    }
+  fs.writeFile = jest.fn((path, data, callback) => {
+    callback(throwsError ? new Error() : null);
   });
 
   beforeEach(() => {

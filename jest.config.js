@@ -3,5 +3,6 @@ module.exports = {
   testEnvironment: 'node',
   collectCoverageFrom: [
     'src/**',
+    '!src/index.js',
   ],
 };
