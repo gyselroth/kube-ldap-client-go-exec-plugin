@@ -10,7 +10,7 @@
     "commander": "^2.20.0",
     "eslint": "^5.16.0",
     "eslint-config-google": "^0.13.0",
-    "jsonwebtoken": "^8.2.0",
+    "jsonwebtoken": "^9.0.0",
     "nexe": "^3.3.0",
     "node-fetch": "^2.1.2"
   },
